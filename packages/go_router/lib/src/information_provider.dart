@@ -85,7 +85,7 @@ class GoRouteInformationProvider extends RouteInformationProvider
     Listenable? refreshListenable,
   })  : _refreshListenable = refreshListenable,
         _value = RouteInformation(
-          location: initialLocation,
+          uri: Uri.parse(initialLocation),
           state: RouteInformationState<void>(
               extra: initialExtra, type: NavigatingType.go),
         ),
@@ -96,8 +96,8 @@ class GoRouteInformationProvider extends RouteInformationProvider
   final Listenable? _refreshListenable;
 
   static WidgetsBinding get _binding => WidgetsBinding.instance;
-  static const RouteInformation _kEmptyRouteInformation =
-      RouteInformation(location: '');
+  static final RouteInformation _kEmptyRouteInformation =
+      RouteInformation(uri: Uri.parse(''));
 
   @override
   void routerReportsNewRouteInformation(RouteInformation routeInformation,
@@ -109,12 +109,14 @@ class GoRouteInformationProvider extends RouteInformationProvider
     final bool replace;
     switch (type) {
       case RouteInformationReportingType.none:
-        if (_valueInEngine.location == routeInformation.location &&
+        if (_valueInEngine.uri == routeInformation.uri &&
             const DeepCollectionEquality()
                 .equals(_valueInEngine.state, routeInformation.state)) {
           return;
         }
+
         replace = _valueInEngine == _kEmptyRouteInformation;
+
         break;
       case RouteInformationReportingType.neglect:
         replace = true;
@@ -128,7 +130,7 @@ class GoRouteInformationProvider extends RouteInformationProvider
       // TODO(chunhtai): remove this ignore and migrate the code
       // https://github.com/flutter/flutter/issues/124045.
       // ignore: unnecessary_null_checks, unnecessary_non_null_assertion
-      location: routeInformation.location!,
+      uri: routeInformation.uri!,
       state: routeInformation.state,
       replace: replace,
     );
@@ -149,8 +151,8 @@ class GoRouteInformationProvider extends RouteInformationProvider
 
   void _setValue(String location, Object state) {
     final bool shouldNotify =
-        _value.location != location || _value.state != state;
-    _value = RouteInformation(location: location, state: state);
+        _value.uri != Uri.parse(location) || _value.state != state;
+    _value = RouteInformation(state: state, uri: Uri.parse(location));
     if (shouldNotify) {
       notifyListeners();
     }
@@ -238,7 +240,7 @@ class GoRouteInformationProvider extends RouteInformationProvider
       _value = _valueInEngine = routeInformation;
     } else {
       _value = RouteInformation(
-        location: routeInformation.location,
+        uri: routeInformation.uri,
         state: RouteInformationState<void>(type: NavigatingType.go),
       );
       _valueInEngine = _kEmptyRouteInformation;
@@ -281,7 +283,8 @@ class GoRouteInformationProvider extends RouteInformationProvider
   @override
   Future<bool> didPushRoute(String route) {
     assert(hasListeners);
-    _platformReportsNewRouteInformation(RouteInformation(location: route));
+    _platformReportsNewRouteInformation(
+        RouteInformation(uri: Uri.parse(route)));
     return SynchronousFuture<bool>(true);
   }
 }
